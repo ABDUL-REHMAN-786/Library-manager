@@ -1,7 +1,4 @@
 
-
-
-
 import streamlit as st
 import json
 import os
@@ -9,7 +6,6 @@ import pandas as pd
 import datetime
 import pytz
 from PIL import Image
-import io
 
 LIBRARY_FILE = "library.json"
 
@@ -36,152 +32,85 @@ current_time = datetime.datetime.now(karachi_tz).strftime("%d-%m-%Y %H:%M:%S")  
 # Set page config
 st.set_page_config(page_title="📚 Personal Library Manager", layout="wide")
 
-# Header Section
+# Header Section (Dark Mode Friendly)
 st.markdown(f"""
-    <div style="text-align: center; padding: 10px; background-color: #f1f1f1;">
-        <h1>📚 Personal Library Manager</h1>
-        <p><strong>Developed by Abdul Rehman</strong></p>
-        <p>Current Time (Karachi): {current_time}</p>
+    <div style="text-align: center; padding: 15px; background-color: #222; border-radius: 10px;">
+        <h1 style="color: #f8f9fa;">📚 Personal Library Manager</h1>
+        <p style="color: #f8f9fa;"><strong>Developed by Abdul Rehman</strong></p>
+        <p style="color: #f8f9fa;">🕒 Current Time (Karachi): {current_time}</p>
     </div>
 """, unsafe_allow_html=True)
 
-# Sidebar menu with an exit option
-menu = st.sidebar.radio("Menu", ["Add Book", "Remove Book", "Search Book", "Display Books", "Statistics", "Import/Export", "Exit"])
+# Sidebar menu
+menu = st.sidebar.radio("📌 Menu", ["➕ Add Book", "🗑️ Remove Book", "🔍 Search Book", "📚 Display Books", "📊 Statistics", "📥 Import/Export", "🚪 Exit"])
 
 # ✅ **Add a Book with Cover Upload**
-if menu == "Add Book":
+if menu == "➕ Add Book":
     st.subheader("➕ Add a New Book")
-    title = st.text_input("Book Title")
-    author = st.text_input("Author")
-    year = st.number_input("Publication Year", min_value=0, step=1)
-    genre = st.text_input("Genre")
-    read_status = st.checkbox("Read")
-    cover = st.file_uploader("Upload Book Cover (optional)", type=["png", "jpg", "jpeg"])
+    title = st.text_input("📖 Book Title")
+    author = st.text_input("✍️ Author")
+    year = st.number_input("📅 Publication Year", min_value=0, step=1)
+    genre = st.text_input("📌 Genre")
+    read_status = st.checkbox("✅ Read")
+    cover = st.file_uploader("📸 Upload Book Cover (optional)", type=["png", "jpg", "jpeg"])
 
-    if st.button("Add Book"):
-        # Validate all required fields (Title, Author, and Genre)
+    if st.button("➕ Add Book"):
         if title.strip() == "" or author.strip() == "" or genre.strip() == "":
-            st.error("Please fill in all fields (Title, Author, and Genre are required).")
+            st.error("❌ Please fill in all required fields (Title, Author, Genre).")
         else:
-            # Proceed if all fields are filled
             book = {"title": title, "author": author, "year": int(year), "genre": genre, "read": read_status, "cover": ""}
-
-            # If a cover image is provided, save it
             if cover:
                 covers_dir = "covers"
                 if not os.path.exists(covers_dir):
                     os.makedirs(covers_dir)
-                
                 cover_path = os.path.join(covers_dir, f"{title.replace(' ', '_')}.jpg")
                 with open(cover_path, "wb") as f:
                     f.write(cover.getbuffer())
                 book["cover"] = cover_path
 
-            # Append the book to the library and save it
             st.session_state.library.append(book)
             save_library(st.session_state.library)
-            st.success(f'📖 Book "{title}" added successfully!')
+            st.success(f'📘 Book "{title}" added successfully!')
 
 # ✅ **Remove a Book**
-elif menu == "Remove Book":
+elif menu == "🗑️ Remove Book":
     st.subheader("🗑️ Remove a Book")
     titles = [book["title"] for book in st.session_state.library]
-    title_to_remove = st.selectbox("Select a book to remove", titles) if titles else None
+    title_to_remove = st.selectbox("🗃️ Select a book to remove", titles) if titles else None
 
-    if title_to_remove and st.button("Remove Book"):
+    if title_to_remove and st.button("🗑️ Remove Book"):
         st.session_state.library = [book for book in st.session_state.library if book["title"] != title_to_remove]
         save_library(st.session_state.library)
         st.success(f'🚮 Book "{title_to_remove}" removed!')
 
 # ✅ **Search for Books**
-elif menu == "Search Book":
+elif menu == "🔍 Search Book":
     st.subheader("🔍 Search for a Book")
-    
-    # Search by Title, Author, Publication Year, Genre, Read/Unread
-    search_criteria = st.radio("Search by:", ["Title", "Author", "Year", "Genre", "Read/Unread", "Cover Image"])
-    
-    query = ""
-    if search_criteria != "Cover Image":
-        query = st.text_input(f"Enter {search_criteria} to search")
+    search_criteria = st.radio("🔎 Search by:", ["Title", "Author", "Year", "Genre", "Read/Unread"])
 
-    # Handle search by title
-    if search_criteria == "Title" and query:
-        results = [book for book in st.session_state.library if query.lower() in book["title"].lower()]
-        if results:
-            for book in results:
-                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
-        else:
-            st.warning("No books found.")
+    query = st.text_input(f"Enter {search_criteria} to search") if search_criteria != "Read/Unread" else None
 
-    # Handle search by author
-    elif search_criteria == "Author" and query:
-        results = [book for book in st.session_state.library if query.lower() in book["author"].lower()]
-        if results:
-            for book in results:
-                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
-        else:
-            st.warning("No books found.")
-
-    # Handle search by year
-    elif search_criteria == "Year" and query:
-        try:
-            year_query = int(query)
-            results = [book for book in st.session_state.library if book["year"] == year_query]
-            if results:
-                for book in results:
-                    st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
-            else:
-                st.warning("No books found.")
-        except ValueError:
-            st.error("Please enter a valid year.")
-
-    # Handle search by genre
-    elif search_criteria == "Genre" and query:
-        results = [book for book in st.session_state.library if query.lower() in book["genre"].lower()]
-        if results:
-            for book in results:
-                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
-        else:
-            st.warning("No books found.")
-
-    # Handle search by read/unread
-    elif search_criteria == "Read/Unread":
-        read_status = st.radio("Choose status:", ["Read", "Unread"])
+    if search_criteria == "Read/Unread":
+        read_status = st.radio("✅ Read Status", ["Read", "Unread"])
         results = [book for book in st.session_state.library if (read_status == "Read" and book["read"]) or (read_status == "Unread" and not book["read"])]
-        if results:
-            for book in results:
-                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
-        else:
-            st.warning("No books found.")
+    else:
+        results = [book for book in st.session_state.library if query and query.lower() in str(book[search_criteria.lower()]).lower()]
 
-    # Handle search by cover image
-    elif search_criteria == "Cover Image":
-        uploaded_image = st.file_uploader("Upload a book cover image to search", type=["png", "jpg", "jpeg"])
-
-        if uploaded_image:
-            uploaded_image = Image.open(uploaded_image)
-            results = []
-            for book in st.session_state.library:
-                if book["cover"]:
-                    stored_image = Image.open(book["cover"])
-                    if list(stored_image.getdata()) == list(uploaded_image.getdata()):  # Simple comparison
-                        results.append(book)
-
-            if results:
-                for book in results:
-                    st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
-            else:
-                st.warning("No books found with the matching cover image.")
+    if results:
+        for book in results:
+            st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
+    else:
+        st.warning("⚠️ No books found.")
 
 # ✅ **Display Books with Sorting & Filtering**
-elif menu == "Display Books":
-    st.subheader("📚 All Books in Library")
+elif menu == "📚 Display Books":
+    st.subheader("📚 Library Collection")
     if not st.session_state.library:
-        st.info("No books available.")
+        st.info("📭 No books available.")
     else:
-        filter_genre = st.selectbox("Filter by Genre", ["All"] + list(set(book["genre"] for book in st.session_state.library)))
-        filter_read = st.radio("Filter by Read Status", ["All", "Read", "Unread"])
-        sort_by = st.radio("Sort By", ["Title", "Author", "Year"])
+        filter_genre = st.selectbox("📌 Filter by Genre", ["All"] + list(set(book["genre"] for book in st.session_state.library)))
+        filter_read = st.radio("✅ Filter by Read Status", ["All", "Read", "Unread"])
+        sort_by = st.radio("🔽 Sort By", ["Title", "Author", "Year"])
 
         filtered_books = st.session_state.library
         if filter_genre != "All":
@@ -191,12 +120,7 @@ elif menu == "Display Books":
         elif filter_read == "Unread":
             filtered_books = [book for book in filtered_books if not book["read"]]
 
-        if sort_by == "Title":
-            filtered_books.sort(key=lambda x: x["title"])
-        elif sort_by == "Author":
-            filtered_books.sort(key=lambda x: x["author"])
-        elif sort_by == "Year":
-            filtered_books.sort(key=lambda x: x["year"], reverse=True)
+        filtered_books.sort(key=lambda x: x[sort_by.lower()])
 
         for book in filtered_books:
             col1, col2 = st.columns([0.2, 0.8])
@@ -207,50 +131,38 @@ elif menu == "Display Books":
                 st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
 
 # ✅ **Library Statistics with Charts**
-elif menu == "Statistics":
+elif menu == "📊 Statistics":
     st.subheader("📊 Library Statistics")
     total_books = len(st.session_state.library)
     read_books = sum(1 for book in st.session_state.library if book["read"])
     unread_books = total_books - read_books
-    read_percentage = (read_books / total_books * 100) if total_books > 0 else 0
 
     st.write(f"📚 **Total Books:** {total_books}")
-    st.write(f"✅ **Books Read:** {read_books} ({read_percentage:.2f}%)")
+    st.write(f"✅ **Books Read:** {read_books} ({(read_books / total_books * 100) if total_books > 0 else 0:.2f}%)")
     st.write(f"📖 **Books Unread:** {unread_books}")
 
-    # Pie Chart for Read Status
     if total_books > 0:
         data = pd.DataFrame({"Status": ["Read", "Unread"], "Count": [read_books, unread_books]})
         st.bar_chart(data.set_index("Status"))
 
 # ✅ **Import/Export Library**
-elif menu == "Import/Export":
+elif menu == "📥 Import/Export":
     st.subheader("📥 Import / 📤 Export Library Data")
-
-    # Export JSON
-    if st.button("Export as JSON"):
+    if st.button("Export JSON"):
         with open("library_export.json", "w") as f:
             json.dump(st.session_state.library, f, indent=4)
-        st.success("Library exported as JSON!")
+        st.success("📂 Library exported as JSON!")
 
-    # Export CSV
-    if st.button("Export as CSV"):
-        df = pd.DataFrame(st.session_state.library)
-        df.to_csv("library_export.csv", index=False)
-        st.success("Library exported as CSV!")
-
-    # Import JSON
-    uploaded_file = st.file_uploader("Import JSON File", type=["json"])
+    uploaded_file = st.file_uploader("📥 Import JSON File", type=["json"])
     if uploaded_file:
         imported_data = json.load(uploaded_file)
         st.session_state.library.extend(imported_data)
         save_library(st.session_state.library)
-        st.success("Library imported successfully!")
+        st.success("📂 Library imported successfully!")
 
-# ✅ **Exit Option** (Simulation)
-elif menu == "Exit":
-    st.markdown("You have exited the app. Thank you for using the Library Manager! You can close this tab.")
-
+# ✅ **Exit**
+elif menu == "🚪 Exit":
+    st.markdown("👋 Thank you for using the Library Manager! You can close this tab.")
 
 
 
