@@ -535,8 +535,6 @@
 
 
 
-
-
 import streamlit as st
 import json
 import os
@@ -552,6 +550,9 @@ try:
 except ImportError:
     st.error("Matplotlib is required for generating charts. Please install it by running `pip install matplotlib`.")
     plt = None
+
+# Set page config FIRST to avoid StreamlitSetPageConfigMustBeFirstCommandError
+st.set_page_config(page_title="📚 Personal Library Manager", layout="wide")
 
 LIBRARY_FILE = "library.json"
 
@@ -574,9 +575,6 @@ if "library" not in st.session_state:
 # Get Karachi Time (Pakistan Standard Time)
 karachi_tz = pytz.timezone("Asia/Karachi")
 current_time = datetime.datetime.now(karachi_tz).strftime("%d-%m-%Y %H:%M:%S")  # Date format: DD-MM-YYYY HH:MM:SS
-
-# Set page config
-st.set_page_config(page_title="📚 Personal Library Manager", layout="wide")
 
 # Header Section
 st.markdown(f"""
@@ -741,6 +739,7 @@ elif menu == "Import/Export":
 # ✅ **Exit Option**
 elif menu == "Exit":
     st.markdown("You have exited the app. Thank you for using the Library Manager! You can close this tab.")
+
 
 
 
