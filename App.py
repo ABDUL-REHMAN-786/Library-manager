@@ -1,8 +1,10 @@
-
 import streamlit as st
 import json
 import os
 import pandas as pd
+import time
+from streamlit_lottie import st_lottie
+import requests
 
 LIBRARY_FILE = "library.json"
 
@@ -24,12 +26,66 @@ if "library" not in st.session_state:
 
 st.set_page_config(page_title="📚 Personal Library Manager", layout="wide")
 
-st.title("📚 Personal Library Manager")
+# Add Typing Effect for Welcome Message
+st.markdown("<h1 style='text-align: center;'>📚 Personal Library Manager</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center;'><span class='typing'>Manage Your Books Easily!</span></h3>", unsafe_allow_html=True)
+
+# CSS for Typing Effect
+st.markdown(
+    """
+    <style>
+    @keyframes typing {
+        from { width: 0 }
+        to { width: 100% }
+    }
+    .typing {
+        display: inline-block;
+        border-right: 3px solid;
+        white-space: nowrap;
+        overflow: hidden;
+        animation: typing 3s steps(30, end), blink-caret 0.5s step-end infinite;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Function to Load Lottie Animations
+def load_lottie_url(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    return None
+
+# Load Animations
+lottie_add = load_lottie_url("https://assets5.lottiefiles.com/packages/lf20_dun4sc2l.json")
+lottie_books = load_lottie_url("https://assets3.lottiefiles.com/packages/lf20_0nzuchju.json")
+
+# Snowfall Effect
+st.markdown(
+    """
+    <script>
+    function startSnow() {
+        let snowflakes = document.createElement("div");
+        snowflakes.innerHTML = "❄️❄️❄️❄️❄️";
+        snowflakes.style.position = "fixed";
+        snowflakes.style.top = "0";
+        snowflakes.style.width = "100%";
+        snowflakes.style.textAlign = "center";
+        snowflakes.style.fontSize = "50px";
+        document.body.appendChild(snowflakes);
+        setTimeout(() => document.body.removeChild(snowflakes), 5000);
+    }
+    setInterval(startSnow, 10000);
+    </script>
+    """,
+    unsafe_allow_html=True
+)
 
 # Sidebar menu
 menu = st.sidebar.radio("Menu", ["Add Book", "Remove Book", "Search Book", "Display Books", "Statistics", "Import/Export"])
 
-# ✅ **Add a Book with Cover Upload**
+# ✅ **Add a Book with Celebration & Animation**
 if menu == "Add Book":
     st.subheader("➕ Add a New Book")
     title = st.text_input("Book Title")
@@ -37,22 +93,24 @@ if menu == "Add Book":
     year = st.number_input("Publication Year", min_value=0, step=1)
     genre = st.text_input("Genre")
     read_status = st.checkbox("Read")
-    cover = st.file_uploader("Upload Book Cover (optional)", type=["png", "jpg", "jpeg"])
-
+    
     if st.button("Add Book"):
         if title and author and genre:
-            book = {"title": title, "author": author, "year": int(year), "genre": genre, "read": read_status, "cover": ""}
-            if cover:
-                cover_path = f"covers/{title.replace(' ', '_')}.jpg"
-                with open(cover_path, "wb") as f:
-                    f.write(cover.getbuffer())
-                book["cover"] = cover_path
-
+            book = {"title": title, "author": author, "year": int(year), "genre": genre, "read": read_status}
             st.session_state.library.append(book)
             save_library(st.session_state.library)
+            
+            # 🎉 Celebration Effects
+            st.balloons()
             st.success(f'📖 Book "{title}" added successfully!')
+            time.sleep(2)
+            st.snow()
         else:
             st.error("Please fill in all fields.")
+
+    # Add Lottie Animation
+    if lottie_add:
+        st_lottie(lottie_add, height=200, key="add_animation")
 
 # ✅ **Remove a Book**
 elif menu == "Remove Book":
@@ -65,36 +123,19 @@ elif menu == "Remove Book":
         save_library(st.session_state.library)
         st.success(f'🚮 Book "{title_to_remove}" removed!')
 
-# ✅ **Search for Books**
-elif menu == "Search Book":
-    st.subheader("🔍 Search for a Book")
-    query = st.text_input("Enter title or author")
-
-    if query:
-        results = [book for book in st.session_state.library if query.lower() in book["title"].lower() or query.lower() in book["author"].lower()]
-        if results:
-            for book in results:
-                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
-        else:
-            st.warning("No books found.")
-
 # ✅ **Display Books with Sorting & Filtering**
 elif menu == "Display Books":
     st.subheader("📚 All Books in Library")
+    
     if not st.session_state.library:
         st.info("No books available.")
     else:
         filter_genre = st.selectbox("Filter by Genre", ["All"] + list(set(book["genre"] for book in st.session_state.library)))
-        filter_read = st.radio("Filter by Read Status", ["All", "Read", "Unread"])
         sort_by = st.radio("Sort By", ["Title", "Author", "Year"])
 
         filtered_books = st.session_state.library
         if filter_genre != "All":
             filtered_books = [book for book in filtered_books if book["genre"] == filter_genre]
-        if filter_read == "Read":
-            filtered_books = [book for book in filtered_books if book["read"]]
-        elif filter_read == "Unread":
-            filtered_books = [book for book in filtered_books if not book["read"]]
 
         if sort_by == "Title":
             filtered_books.sort(key=lambda x: x["title"])
@@ -104,14 +145,13 @@ elif menu == "Display Books":
             filtered_books.sort(key=lambda x: x["year"], reverse=True)
 
         for book in filtered_books:
-            col1, col2 = st.columns([0.2, 0.8])
-            with col1:
-                if book["cover"]:
-                    st.image(book["cover"], width=100)
-            with col2:
-                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
+            st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
 
-# ✅ **Library Statistics with Charts**
+    # Lottie Animation
+    if lottie_books:
+        st_lottie(lottie_books, height=200, key="books_animation")
+
+# ✅ **Library Statistics**
 elif menu == "Statistics":
     st.subheader("📊 Library Statistics")
     total_books = len(st.session_state.library)
@@ -123,31 +163,7 @@ elif menu == "Statistics":
     st.write(f"✅ **Books Read:** {read_books} ({read_percentage:.2f}%)")
     st.write(f"📖 **Books Unread:** {unread_books}")
 
-    # Pie Chart for Read Status
-    if total_books > 0:
-        data = pd.DataFrame({"Status": ["Read", "Unread"], "Count": [read_books, unread_books]})
-        st.bar_chart(data.set_index("Status"))
-
-# ✅ **Import & Export Library**
-elif menu == "Import/Export":
-    st.subheader("📥 Import / 📤 Export Library Data")
-
-    # Export JSON
-    if st.button("Export as JSON"):
-        with open("library_export.json", "w") as f:
-            json.dump(st.session_state.library, f, indent=4)
-        st.success("Library exported as JSON!")
-
-    # Export CSV
-    if st.button("Export as CSV"):
-        df = pd.DataFrame(st.session_state.library)
-        df.to_csv("library_export.csv", index=False)
-        st.success("Library exported as CSV!")
-
-    # Import JSON
-    uploaded_file = st.file_uploader("Import JSON File", type=["json"])
-    if uploaded_file:
-        imported_data = json.load(uploaded_file)
-        st.session_state.library.extend(imported_data)
-        save_library(st.session_state.library)
-        st.success("Library imported successfully!")
+    # Confetti for 100% read books
+    if read_percentage == 100:
+        st.success("🎉 Congratulations! You've read all your books!")
+        st.balloons()
