@@ -1,5 +1,4 @@
 
-
 import streamlit as st
 import json
 import os
@@ -28,31 +27,38 @@ if "library" not in st.session_state:
 
 # Get Karachi Time (Pakistan Standard Time)
 karachi_tz = pytz.timezone("Asia/Karachi")
-current_time = datetime.datetime.now(karachi_tz).strftime("%d-%m-%Y %H:%M:%S")  # Date format: DD-MM-YYYY HH:MM:SS
+current_time = datetime.datetime.now(karachi_tz).strftime("%d-%m-%Y %H:%M:%S")
 
 # Set page config
 st.set_page_config(page_title="📚 Personal Library Manager", layout="wide")
 
-# Header Section (Simple & Clean)
-st.title("📚 Personal Library Manager")
-st.caption(f"**Developed by Abdul Rehman** | 🕒 **Current Time (Karachi):** {current_time}")
+# ✅ **Header Section**
+st.markdown(
+    f"""
+    <h1 style="text-align: center;">📚 Personal Library Manager</h1>
+    <h3 style="text-align: center;">Developed by Abdul Rehman</h3>
+    <h3 style="text-align: center; color: red;">🕒 Current Time (Karachi):<br>{current_time}</h3>
+    """,
+    unsafe_allow_html=True
+)
 
 # Sidebar menu
-menu = st.sidebar.radio("📌 Menu", ["➕ Add Book", "🗑️ Remove Book", "🔍 Search Book", "📚 Display Books", "📊 Statistics", "📥 Import/Export", "🚪 Exit"])
+menu = st.sidebar.radio("📌 Menu", ["📖 Add Book", "🗑️ Remove Book", "🔍 Search Book", 
+                                    "📚 Display Books", "📊 Statistics", "📥 Import/Export", "🚪 Exit"])
 
 # ✅ **Add a Book with Cover Upload**
-if menu == "➕ Add Book":
+if menu == "📖 Add Book":
     st.subheader("➕ Add a New Book")
-    title = st.text_input("📖 Book Title")
+    title = st.text_input("📘 Book Title")
     author = st.text_input("✍️ Author")
     year = st.number_input("📅 Publication Year", min_value=0, step=1)
-    genre = st.text_input("📌 Genre")
-    read_status = st.checkbox("✅ Read")
-    cover = st.file_uploader("📸 Upload Book Cover (optional)", type=["png", "jpg", "jpeg"])
+    genre = st.text_input("📂 Genre")
+    read_status = st.checkbox("✔️ Read")
+    cover = st.file_uploader("🖼️ Upload Book Cover (optional)", type=["png", "jpg", "jpeg"])
 
-    if st.button("➕ Add Book"):
+    if st.button("✅ Add Book"):
         if title.strip() == "" or author.strip() == "" or genre.strip() == "":
-            st.error("❌ Please fill in all required fields (Title, Author, Genre).")
+            st.error("⚠️ Please fill in all fields (Title, Author, and Genre are required).")
         else:
             book = {"title": title, "author": author, "year": int(year), "genre": genre, "read": read_status, "cover": ""}
             if cover:
@@ -63,18 +69,17 @@ if menu == "➕ Add Book":
                 with open(cover_path, "wb") as f:
                     f.write(cover.getbuffer())
                 book["cover"] = cover_path
-
             st.session_state.library.append(book)
             save_library(st.session_state.library)
-            st.success(f'📘 Book "{title}" added successfully!')
+            st.success(f'📖 Book "{title}" added successfully!')
 
 # ✅ **Remove a Book**
 elif menu == "🗑️ Remove Book":
     st.subheader("🗑️ Remove a Book")
     titles = [book["title"] for book in st.session_state.library]
-    title_to_remove = st.selectbox("🗃️ Select a book to remove", titles) if titles else None
+    title_to_remove = st.selectbox("🗂️ Select a book to remove", titles) if titles else None
 
-    if title_to_remove and st.button("🗑️ Remove Book"):
+    if title_to_remove and st.button("🚮 Remove Book"):
         st.session_state.library = [book for book in st.session_state.library if book["title"] != title_to_remove]
         save_library(st.session_state.library)
         st.success(f'🚮 Book "{title_to_remove}" removed!')
@@ -85,66 +90,61 @@ elif menu == "🔍 Search Book":
     search_criteria = st.radio("🔎 Search by:", ["Title", "Author", "Year", "Genre", "Read/Unread"])
 
     query = st.text_input(f"Enter {search_criteria} to search") if search_criteria != "Read/Unread" else None
-
     if search_criteria == "Read/Unread":
-        read_status = st.radio("✅ Read Status", ["Read", "Unread"])
-        results = [book for book in st.session_state.library if (read_status == "Read" and book["read"]) or (read_status == "Unread" and not book["read"])]
-    else:
-        results = [book for book in st.session_state.library if query and query.lower() in str(book[search_criteria.lower()]).lower()]
+        read_status = st.radio("✔️ Choose status:", ["Read", "Unread"])
 
-    if results:
-        for book in results:
-            st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
-    else:
-        st.warning("⚠️ No books found.")
+    if st.button("🔎 Search"):
+        if search_criteria == "Read/Unread":
+            results = [book for book in st.session_state.library if (read_status == "Read" and book["read"]) or (read_status == "Unread" and not book["read"])]
+        else:
+            results = [book for book in st.session_state.library if query.lower() in str(book[search_criteria.lower()]).lower()]
 
-# ✅ **Display Books with Sorting & Filtering**
+        if results:
+            for book in results:
+                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✔️ Read" if book["read"] else "📖 Unread"}')
+        else:
+            st.warning("❌ No books found.")
+
+# ✅ **Display Books**
 elif menu == "📚 Display Books":
-    st.subheader("📚 Library Collection")
+    st.subheader("📚 All Books in Library")
     if not st.session_state.library:
         st.info("📭 No books available.")
     else:
-        filter_genre = st.selectbox("📌 Filter by Genre", ["All"] + list(set(book["genre"] for book in st.session_state.library)))
-        filter_read = st.radio("✅ Filter by Read Status", ["All", "Read", "Unread"])
+        filter_genre = st.selectbox("📂 Filter by Genre", ["All"] + list(set(book["genre"] for book in st.session_state.library)))
+        filter_read = st.radio("✔️ Filter by Read Status", ["All", "Read", "Unread"])
         sort_by = st.radio("🔽 Sort By", ["Title", "Author", "Year"])
 
-        filtered_books = st.session_state.library
+        books = st.session_state.library
         if filter_genre != "All":
-            filtered_books = [book for book in filtered_books if book["genre"] == filter_genre]
-        if filter_read == "Read":
-            filtered_books = [book for book in filtered_books if book["read"]]
-        elif filter_read == "Unread":
-            filtered_books = [book for book in filtered_books if not book["read"]]
+            books = [book for book in books if book["genre"] == filter_genre]
+        if filter_read != "All":
+            books = [book for book in books if book["read"] == (filter_read == "Read")]
 
-        filtered_books.sort(key=lambda x: x[sort_by.lower()])
+        books.sort(key=lambda x: x[sort_by.lower()], reverse=(sort_by == "Year"))
 
-        for book in filtered_books:
+        for book in books:
             col1, col2 = st.columns([0.2, 0.8])
             with col1:
                 if book["cover"]:
                     st.image(book["cover"], width=100)
             with col2:
-                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
+                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✔️ Read" if book["read"] else "📖 Unread"}')
 
-# ✅ **Library Statistics with Charts**
+# ✅ **Library Statistics**
 elif menu == "📊 Statistics":
     st.subheader("📊 Library Statistics")
     total_books = len(st.session_state.library)
     read_books = sum(1 for book in st.session_state.library if book["read"])
     unread_books = total_books - read_books
-
     st.write(f"📚 **Total Books:** {total_books}")
-    st.write(f"✅ **Books Read:** {read_books} ({(read_books / total_books * 100) if total_books > 0 else 0:.2f}%)")
+    st.write(f"✔️ **Books Read:** {read_books} ({(read_books/total_books*100) if total_books > 0 else 0:.2f}%)")
     st.write(f"📖 **Books Unread:** {unread_books}")
-
-    if total_books > 0:
-        data = pd.DataFrame({"Status": ["Read", "Unread"], "Count": [read_books, unread_books]})
-        st.bar_chart(data.set_index("Status"))
 
 # ✅ **Import/Export Library**
 elif menu == "📥 Import/Export":
     st.subheader("📥 Import / 📤 Export Library Data")
-    if st.button("Export JSON"):
+    if st.button("📤 Export as JSON"):
         with open("library_export.json", "w") as f:
             json.dump(st.session_state.library, f, indent=4)
         st.success("📂 Library exported as JSON!")
@@ -154,12 +154,11 @@ elif menu == "📥 Import/Export":
         imported_data = json.load(uploaded_file)
         st.session_state.library.extend(imported_data)
         save_library(st.session_state.library)
-        st.success("📂 Library imported successfully!")
+        st.success("✅ Library imported successfully!")
 
-# ✅ **Exit**
+# ✅ **Exit Option**
 elif menu == "🚪 Exit":
-    st.markdown("👋 Thank you for using the Library Manager! You can close this tab.")
-
+    st.markdown("📌 **You have exited the app. Thank you for using the Library Manager!**")
 
 
 
