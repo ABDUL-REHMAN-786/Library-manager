@@ -1,4 +1,5 @@
 
+
 import streamlit as st
 import json
 import os
@@ -32,14 +33,9 @@ current_time = datetime.datetime.now(karachi_tz).strftime("%d-%m-%Y %H:%M:%S")  
 # Set page config
 st.set_page_config(page_title="📚 Personal Library Manager", layout="wide")
 
-# Header Section (Dark Mode Friendly)
-st.markdown(f"""
-    <div style="text-align: center; padding: 15px; background-color: #222; border-radius: 10px;">
-        <h1 style="color: #f8f9fa;">📚 Personal Library Manager</h1>
-        <p style="color: #f8f9fa;"><strong>Developed by Abdul Rehman</strong></p>
-        <p style="color: #f8f9fa;">🕒 Current Time (Karachi): {current_time}</p>
-    </div>
-""", unsafe_allow_html=True)
+# Header Section (Simple & Clean)
+st.title("📚 Personal Library Manager")
+st.caption(f"**Developed by Abdul Rehman** | 🕒 **Current Time (Karachi):** {current_time}")
 
 # Sidebar menu
 menu = st.sidebar.radio("📌 Menu", ["➕ Add Book", "🗑️ Remove Book", "🔍 Search Book", "📚 Display Books", "📊 Statistics", "📥 Import/Export", "🚪 Exit"])
@@ -163,8 +159,6 @@ elif menu == "📥 Import/Export":
 # ✅ **Exit**
 elif menu == "🚪 Exit":
     st.markdown("👋 Thank you for using the Library Manager! You can close this tab.")
-
-
 
 
 
