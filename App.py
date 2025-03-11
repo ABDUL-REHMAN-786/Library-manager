@@ -542,8 +542,6 @@
 
 
 
-
-
 import streamlit as st
 import json
 import os
@@ -732,6 +730,35 @@ elif menu == "Display Books":
                 if book["cover"]:
                     st.image(book["cover"], width=100)
             with col2:
-                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["
+                st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
+
+# ✅ **Import/Export Library**
+elif menu == "Import/Export":
+    st.subheader("📥 Import / 📤 Export Library Data")
+
+    # Export JSON
+    if st.button("Export as JSON"):
+        with open("library_export.json", "w") as f:
+            json.dump(st.session_state.library, f, indent=4)
+        st.success("Library exported as JSON!")
+
+    # Export CSV
+    if st.button("Export as CSV"):
+        df = pd.DataFrame(st.session_state.library)
+        df.to_csv("library_export.csv", index=False)
+        st.success("Library exported as CSV!")
+
+    # Import JSON
+    uploaded_file = st.file_uploader("Import JSON File", type=["json"])
+    if uploaded_file:
+        imported_data = json.load(uploaded_file)
+        st.session_state.library.extend(imported_data)
+        save_library(st.session_state.library)
+        st.success("Library imported successfully!")
+
+# ✅ **Exit Option**
+elif menu == "Exit":
+    st.markdown("You have exited the app. Thank you for using the Library Manager! You can close this tab.")
+
 
 
