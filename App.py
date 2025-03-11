@@ -1,3 +1,4 @@
+import streamlit as st
 import json
 import os
 
@@ -16,97 +17,120 @@ def save_library(library):
     with open(LIBRARY_FILE, "w") as file:
         json.dump(library, file, indent=4)
 
-# 📖 Add a new book
-def add_book(library):
-    title = input("📕 Enter book title: ").strip()
-    author = input("✍️ Enter author name: ").strip()
-    try:
-        year = int(input("📅 Enter publication year: "))
-    except ValueError:
-        print("❌ Invalid year! Please enter a number.")
-        return
-    genre = input("📚 Enter genre: ").strip()
-    read_status = input("✅ Have you read this book? (yes/no): ").strip().lower() == "yes"
+# 🎉 Streamlit UI Setup
+st.set_page_config(page_title="Personal Library Manager", page_icon="📚", layout="wide")
 
-    book = {"title": title, "author": author, "year": year, "genre": genre, "read": read_status}
-    library.append(book)
-    save_library(library)
-    print(f'✅ Book "{title}" added successfully!\n')
+st.title("📚 Personal Library Manager")
+st.sidebar.title("📖 Menu")
 
-# 🚮 Remove a book
-def remove_book(library):
-    title_to_remove = input("📕 Enter the title of the book to remove: ").strip()
-    updated_library = [book for book in library if book["title"].lower() != title_to_remove.lower()]
+# Load books from file
+library = load_library()
 
-    if len(updated_library) == len(library):
-        print("🚫 Book not found!")
+# 🎈 Celebration effect
+def celebrate():
+    st.balloons()
+    st.success("🎉 Action successful!")
+
+# 🎭 Add a new book
+def add_book():
+    with st.form("add_book_form"):
+        title = st.text_input("📕 Book Title")
+        author = st.text_input("✍️ Author")
+        year = st.number_input("📅 Publication Year", min_value=1000, max_value=3000, step=1)
+        genre = st.text_input("📚 Genre")
+        read_status = st.checkbox("✅ Mark as Read")
+        submit = st.form_submit_button("➕ Add Book")
+
+        if submit:
+            if title and author:
+                library.append({"title": title, "author": author, "year": year, "genre": genre, "read": read_status})
+                save_library(library)
+                st.success(f"📖 '{title}' added successfully!")
+                celebrate()
+            else:
+                st.error("❌ Please enter both title and author.")
+
+# ❌ Remove a book
+def remove_book():
+    book_titles = [book["title"] for book in library]
+    if book_titles:
+        book_to_remove = st.selectbox("📕 Select a book to remove", book_titles)
+        if st.button("🗑️ Remove Book"):
+            global library
+            library = [book for book in library if book["title"] != book_to_remove]
+            save_library(library)
+            st.success(f"🗑️ '{book_to_remove}' removed!")
+            celebrate()
     else:
-        save_library(updated_library)
-        print(f'🗑️ Book "{title_to_remove}" removed successfully!\n')
+        st.warning("📌 No books available to remove.")
 
 # 🔎 Search for a book
-def search_book(library):
-    query = input("🔍 Enter title or author to search: ").strip().lower()
-    results = [book for book in library if query in book["title"].lower() or query in book["author"].lower()]
-
-    if results:
-        print("\n📖 Matching Books:")
-        for book in results:
-            print(f'📚 "{book["title"]}" - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
-    else:
-        print("🚫 No matching books found!")
+def search_book():
+    search_term = st.text_input("🔍 Search by Title or Author").lower()
+    if st.button("🔎 Search"):
+        results = [book for book in library if search_term in book["title"].lower() or search_term in book["author"].lower()]
+        if results:
+            for book in results:
+                st.write(f'📖 **{book["title"]}** by {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
+        else:
+            st.warning("🚫 No matching books found.")
 
 # 📚 Display all books
-def display_books(library):
+def display_books():
     if not library:
-        print("📌 No books available!")
+        st.warning("📌 No books available!")
     else:
-        print("\n📖 Your Library Collection:")
         for book in library:
-            print(f'📚 "{book["title"]}" - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
+            st.write(f'📖 **{book["title"]}** by {book["author"]} ({book["year"]}) - {book["genre"]} - {"✅ Read" if book["read"] else "📖 Unread"}')
 
 # 📊 Show library statistics
-def display_statistics(library):
+def display_statistics():
     total_books = len(library)
     read_books = sum(1 for book in library if book["read"])
     unread_books = total_books - read_books
     read_percentage = (read_books / total_books * 100) if total_books > 0 else 0
 
-    print("\n📊 Library Statistics:")
-    print(f"📚 Total Books: {total_books}")
-    print(f"✅ Books Read: {read_books} ({read_percentage:.2f}%)")
-    print(f"📖 Books Unread: {unread_books}")
+    st.subheader("📊 Library Statistics")
+    st.metric("📚 Total Books", total_books)
+    st.metric("✅ Books Read", read_books)
+    st.metric("📖 Books Unread", unread_books)
+
+    # 📊 Chart Visualization
+    if total_books > 0:
+        st.bar_chart({"Read": read_books, "Unread": unread_books})
+
+# 📂 File Upload & Download Feature
+def file_management():
+    st.subheader("📂 Backup & Restore Library")
+
+    # 📥 Download File
+    st.download_button("⬇️ Download Library", data=json.dumps(library, indent=4), file_name="library.json")
+
+    # 📤 Upload File
+    uploaded_file = st.file_uploader("📤 Upload Library JSON File", type=["json"])
+    if uploaded_file is not None:
+        data = json.load(uploaded_file)
+        global library
+        library = data
+        save_library(library)
+        st.success("✅ Library uploaded successfully!")
 
 # 🎛️ Menu System
-def main():
-    library = load_library()
+menu = st.sidebar.radio("📌 Choose an option", ["➕ Add Book", "🗑️ Remove Book", "🔎 Search Book", "📚 Display All Books", "📊 Show Statistics", "📂 Backup & Restore"])
 
-    while True:
-        print("\n📚 PERSONAL LIBRARY MANAGER")
-        print("1️⃣ Add a Book")
-        print("2️⃣ Remove a Book")
-        print("3️⃣ Search for a Book")
-        print("4️⃣ Display All Books")
-        print("5️⃣ Show Statistics")
-        print("6️⃣ Exit")
-        choice = input("📌 Select an option (1-6): ").strip()
+if menu == "➕ Add Book":
+    add_book()
+elif menu == "🗑️ Remove Book":
+    remove_book()
+elif menu == "🔎 Search Book":
+    search_book()
+elif menu == "📚 Display All Books":
+    display_books()
+elif menu == "📊 Show Statistics":
+    display_statistics()
+elif menu == "📂 Backup & Restore":
+    file_management()
 
-        if choice == "1":
-            add_book(library)
-        elif choice == "2":
-            remove_book(library)
-        elif choice == "3":
-            search_book(library)
-        elif choice == "4":
-            display_books(library)
-        elif choice == "5":
-            display_statistics(library)
-        elif choice == "6":
-            print("👋 Exiting... Have a great day! 📚")
-            break
-        else:
-            print("⚠️ Invalid option! Please choose a number between 1-6.")
-
-# 🚀 Run the program
-if __name__ == "__main__":
-    main()
+# 🎉 Footer Message
+st.sidebar.markdown("---")
+st.sidebar.markdown("📖 *Developed by Abdul Rehman*")
