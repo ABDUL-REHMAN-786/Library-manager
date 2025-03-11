@@ -2,9 +2,8 @@ import streamlit as st
 import json
 import os
 import pandas as pd
-import time
-from streamlit_lottie import st_lottie
 import requests
+import time
 
 # File to store books
 LIBRARY_FILE = "library.json"
@@ -29,57 +28,25 @@ st.set_page_config(page_title="📚 Personal Library Manager", layout="wide")
 
 # Function to Load Lottie Animations
 def load_lottie_url(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+    except:
+        return None
     return None
 
-# Load Lottie Animations
-lottie_add = load_lottie_url("https://assets5.lottiefiles.com/packages/lf20_dun4sc2l.json")
-lottie_books = load_lottie_url("https://assets3.lottiefiles.com/packages/lf20_0nzuchju.json")
+# Load Lottie Animations (Using JSON Directly)
+lottie_add = load_lottie_url("https://lottie.host/85c5de04-0f66-442e-970c-0291b4967d1e/9kGmNp6QIA.json")
+lottie_books = load_lottie_url("https://lottie.host/997df92b-39b5-4d42-97ba-fc83d232a73b/dmWvTTRSAy.json")
 
-# Typing Effect for Welcome Message
+# 🎉 Welcome Message with Animations
 st.markdown("<h1 style='text-align: center;'>📚 Personal Library Manager</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center;'><span class='typing'>Manage Your Books Easily!</span></h3>", unsafe_allow_html=True)
 
-# CSS for Typing Effect & Snowfall
-st.markdown(
-    """
-    <style>
-    @keyframes typing {
-        from { width: 0 }
-        to { width: 100% }
-    }
-    .typing {
-        display: inline-block;
-        border-right: 3px solid;
-        white-space: nowrap;
-        overflow: hidden;
-        animation: typing 3s steps(30, end), blink-caret 0.5s step-end infinite;
-    }
-    </style>
-    <script>
-    function startSnow() {
-        let snowflakes = document.createElement("div");
-        snowflakes.innerHTML = "❄️❄️❄️❄️❄️";
-        snowflakes.style.position = "fixed";
-        snowflakes.style.top = "0";
-        snowflakes.style.width = "100%";
-        snowflakes.style.textAlign = "center";
-        snowflakes.style.fontSize = "50px";
-        document.body.appendChild(snowflakes);
-        setTimeout(() => document.body.removeChild(snowflakes), 5000);
-    }
-    setInterval(startSnow, 10000);
-    </script>
-    """,
-    unsafe_allow_html=True
-)
+st.sidebar.title("📌 Menu")
+menu = st.sidebar.radio("", ["➕ Add Book", "❌ Remove Book", "🔍 Search Book", "📚 Display Books", "📊 Statistics"])
 
-# Sidebar Menu
-menu = st.sidebar.radio("📌 Menu", ["➕ Add Book", "❌ Remove Book", "🔍 Search Book", "📚 Display Books", "📊 Statistics"])
-
-# ✅ **Add a Book with Celebration & Animation**
+# ✅ **Add a Book**
 if menu == "➕ Add Book":
     st.subheader("📖 Add a New Book")
     title = st.text_input("📕 Book Title")
@@ -93,16 +60,16 @@ if menu == "➕ Add Book":
             book = {"title": title, "author": author, "year": int(year), "genre": genre, "read": read_status}
             st.session_state.library.append(book)
             save_library(st.session_state.library)
-
-            st.balloons()  # 🎈 Celebration Effect
             st.success(f'📖 Book "{title}" added successfully!')
-            time.sleep(2)
+            st.balloons()  # 🎈 Celebration Effect
+            time.sleep(1)
             st.snow()  # ❄️ Snow Effect
         else:
             st.error("⚠️ Please fill in all fields.")
 
     if lottie_add:
-        st_lottie(lottie_add, height=200, key="add_animation")
+        st.write("📌 Here's a cool animation for adding books:")
+        st.json(lottie_add)
 
 # ✅ **Remove a Book**
 elif menu == "❌ Remove Book":
@@ -140,7 +107,8 @@ elif menu == "📚 Display Books":
         st.dataframe(df)
 
     if lottie_books:
-        st_lottie(lottie_books, height=200, key="books_animation")
+        st.write("📚 Enjoy a cool animation:")
+        st.json(lottie_books)
 
 # ✅ **Library Statistics**
 elif menu == "📊 Statistics":
