@@ -564,13 +564,12 @@
 
 
 
-
-
 import streamlit as st
 import json
 import os
 import pandas as pd
 import datetime
+import pytz
 
 LIBRARY_FILE = "library.json"
 
@@ -590,8 +589,9 @@ def save_library(library):
 if "library" not in st.session_state:
     st.session_state.library = load_library()
 
-# Get current time
-current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+# Get Karachi Time (Pakistan Standard Time)
+karachi_tz = pytz.timezone("Asia/Karachi")
+current_time = datetime.datetime.now(karachi_tz).strftime("%d-%m-%Y %H:%M:%S")  # Date format: DD-MM-YYYY HH:MM:SS
 
 # Set page config
 st.set_page_config(page_title="📚 Personal Library Manager", layout="wide")
@@ -601,7 +601,7 @@ st.markdown(f"""
     <div style="text-align: center; padding: 10px; background-color: #f1f1f1;">
         <h1>📚 Personal Library Manager</h1>
         <p><strong>Developed by Abdul Rehman</strong></p>
-        <p>Current Time: {current_time}</p>
+        <p>Current Time (Karachi): {current_time}</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -781,3 +781,4 @@ elif menu == "Import/Export":
 # ✅ **Exit Option** (Simulation)
 elif menu == "Exit":
     st.markdown("You have exited the app. Thank you for using the Library Manager! You can close this tab.")
+
