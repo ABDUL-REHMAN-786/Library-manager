@@ -142,34 +142,309 @@ elif menu == "📚 Display Books":
                     </div>
                     """, unsafe_allow_html=True)
 
-# ✅ **Library Statistics**
+# ✅ **Library Statistics (Card Format)**
 elif menu == "📊 Statistics":
     st.subheader("📊 Library Statistics")
+
+    # Calculate statistics
     total_books = len(st.session_state.library)
     read_books = sum(1 for book in st.session_state.library if book["read"])
     unread_books = total_books - read_books
-    st.write(f"📚 **Total Books:** {total_books}")
-    st.write(f"✔️ **Books Read:** {read_books} ({(read_books/total_books*100) if total_books > 0 else 0:.2f}%)")
-    st.write(f"📖 **Books Unread:** {unread_books}")
 
-# ✅ **Import/Export Library**
+    # Get Most Common Genre
+    genres = [book["genre"] for book in st.session_state.library]
+    most_common_genre = pd.Series(genres).mode()[0] if genres else "N/A"
+    
+    # Get Most Read Author
+    authors = [book["author"] for book in st.session_state.library if book["read"]]
+    most_read_author = pd.Series(authors).mode()[0] if authors else "N/A"
+
+    # Display statistics in cards
+    with st.container():
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown(f"""
+            <div style="background-color: #f0f0f0; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                <h4 style="color: #2c3e50;">📚 Total Books</h4>
+                <p style="color: #34495e; font-size: 24px; font-weight: bold;">{total_books}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div style="background-color: #f0f0f0; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                <h4 style="color: #2c3e50;">✔️ Books Read</h4>
+                <p style="color: #16a085; font-size: 24px; font-weight: bold;">{read_books} ({(read_books/total_books*100) if total_books > 0 else 0:.2f}%)</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # Add more statistics as cards
+    st.markdown(f"""
+    <div style="background-color: #f0f0f0; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+        <h4 style="color: #2c3e50;">📖 Books Unread</h4>
+        <p style="color: #e74c3c; font-size: 24px; font-weight: bold;">{unread_books}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style="background-color: #f0f0f0; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+        <h4 style="color: #2c3e50;">🎬 Most Common Genre</h4>
+        <p style="color: #34495e; font-size: 20px;">{most_common_genre}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style="background-color: #f0f0f0; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+        <h4 style="color: #2c3e50;">🌟 Most Read Author</h4>
+        <p style="color: #34495e; font-size: 20px;">{most_read_author}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ✅ **Import/Export Library (Card Format)**
 elif menu == "📥 Import/Export":
     st.subheader("📥 Import / 📤 Export Library Data")
-    if st.button("📤 Export as JSON"):
-        with open("library_export.json", "w") as f:
-            json.dump(st.session_state.library, f, indent=4)
-        st.success("📂 Library exported as JSON!")
 
-    uploaded_file = st.file_uploader("📥 Import JSON File", type=["json"])
-    if uploaded_file:
-        imported_data = json.load(uploaded_file)
-        st.session_state.library.extend(imported_data)
-        save_library(st.session_state.library)
-        st.success("✅ Library imported successfully!")
+    # Export Button (Card Form)
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("📤 Export Library as JSON"):
+            with open("library_export.json", "w") as f:
+                json.dump(st.session_state.library, f, indent=4)
+            st.success("📂 Library exported as JSON!")
+
+    with col2:
+        uploaded_file = st.file_uploader("📥 Import JSON File", type=["json"])
+        if uploaded_file:
+            imported_data = json.load(uploaded_file)
+            st.session_state.library.extend(imported_data)
+            save_library(st.session_state.library)
+            st.success("✅ Library imported successfully!")
+            # Display imported books in card format
+            for book in imported_data:
+                st.markdown(f"""
+                <div style="background-color: #f0f0f0; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                    <h4 style="color: #2c3e50;">{book["title"]}</h4>
+                    <p style="color: #34495e; font-size: 16px;">{book["author"]}</p>
+                    <p style="color: #7f8c8d;">{book["year"]} | {book["genre"]}</p>
+                    <p style="color: #16a085;">{"✔️ Read" if book["read"] else "📖 Unread"}</p>
+                </div>
+                """, unsafe_allow_html=True)
 
 # ✅ **Exit Option**
 elif menu == "🚪 Exit":
     st.markdown("📌 **You have exited the app. Thank you for using the Library Manager!**")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# import streamlit as st
+# import json
+# import os
+# import pandas as pd
+# import datetime
+# import pytz
+# from PIL import Image
+
+# LIBRARY_FILE = "library.json"
+
+# # Load library from file
+# def load_library():
+#     if os.path.exists(LIBRARY_FILE):
+#         with open(LIBRARY_FILE, "r") as file:
+#             return json.load(file)
+#     return []
+
+# # Save library to file
+# def save_library(library):
+#     with open(LIBRARY_FILE, "w") as file:
+#         json.dump(library, file, indent=4)
+
+# # Initialize session state
+# if "library" not in st.session_state:
+#     st.session_state.library = load_library()
+
+# # Get Karachi Time (Pakistan Standard Time)
+# karachi_tz = pytz.timezone("Asia/Karachi")
+# current_time = datetime.datetime.now(karachi_tz).strftime("%d-%m-%Y %H:%M:%S")
+
+# # Set page config
+# st.set_page_config(page_title="📚 Personal Library Manager", layout="wide")
+
+# # ✅ **Header Section**
+# st.markdown(
+#     f"""
+#     <h1 style="text-align: center;">📚 Personal Library Manager</h1>
+#     <h3 style="text-align: center;">Developed by Abdul Rehman</h3>
+#     <h3 style="text-align: center; color: red;">🕒 Current Time (Karachi):<br>{current_time}</h3>
+#     """,
+#     unsafe_allow_html=True
+# )
+
+# # Sidebar menu
+# menu = st.sidebar.radio("📌 Menu", ["📖 Add Book", "🗑️ Remove Book", "🔍 Search Book", 
+#                                     "📚 Display Books", "📊 Statistics", "📥 Import/Export", "🚪 Exit"])
+
+# # ✅ **Add a Book with Cover Upload**
+# if menu == "📖 Add Book":
+#     st.subheader("➕ Add a New Book")
+#     title = st.text_input("📘 Book Title")
+#     author = st.text_input("✍️ Author")
+#     year = st.number_input("📅 Publication Year", min_value=0, step=1)
+#     genre = st.text_input("📂 Genre")
+#     read_status = st.checkbox("✔️ Read")
+#     cover = st.file_uploader("🖼️ Upload Book Cover (optional)", type=["png", "jpg", "jpeg"])
+
+#     if st.button("✅ Add Book"):
+#         if title.strip() == "" or author.strip() == "" or genre.strip() == "":
+#             st.error("⚠️ Please fill in all fields (Title, Author, and Genre are required).")
+#         else:
+#             book = {"title": title, "author": author, "year": int(year), "genre": genre, "read": read_status, "cover": ""}
+#             if cover:
+#                 covers_dir = "covers"
+#                 if not os.path.exists(covers_dir):
+#                     os.makedirs(covers_dir)
+#                 cover_path = os.path.join(covers_dir, f"{title.replace(' ', '_')}.jpg")
+#                 with open(cover_path, "wb") as f:
+#                     f.write(cover.getbuffer())
+#                 book["cover"] = cover_path
+#             st.session_state.library.append(book)
+#             save_library(st.session_state.library)
+#             st.success(f'📖 Book "{title}" added successfully!')
+
+# # ✅ **Remove a Book**
+# elif menu == "🗑️ Remove Book":
+#     st.subheader("🗑️ Remove a Book")
+#     titles = [book["title"] for book in st.session_state.library]
+#     title_to_remove = st.selectbox("🗂️ Select a book to remove", titles) if titles else None
+
+#     if title_to_remove and st.button("🚮 Remove Book"):
+#         st.session_state.library = [book for book in st.session_state.library if book["title"] != title_to_remove]
+#         save_library(st.session_state.library)
+#         st.success(f'🚮 Book "{title_to_remove}" removed!')
+
+# # ✅ **Search for Books**
+# elif menu == "🔍 Search Book":
+#     st.subheader("🔍 Search for a Book")
+#     search_criteria = st.radio("🔎 Search by:", ["Title", "Author", "Year", "Genre", "Read/Unread"])
+
+#     query = st.text_input(f"Enter {search_criteria} to search") if search_criteria != "Read/Unread" else None
+#     if search_criteria == "Read/Unread":
+#         read_status = st.radio("✔️ Choose status:", ["Read", "Unread"])
+
+#     if st.button("🔎 Search"):
+#         if search_criteria == "Read/Unread":
+#             results = [book for book in st.session_state.library if (read_status == "Read" and book["read"]) or (read_status == "Unread" and not book["read"])]
+#         else:
+#             results = [book for book in st.session_state.library if query.lower() in str(book[search_criteria.lower()]).lower()]
+
+#         if results:
+#             for book in results:
+#                 st.write(f'📘 **{book["title"]}** - {book["author"]} ({book["year"]}) - {book["genre"]} - {"✔️ Read" if book["read"] else "📖 Unread"}')
+#         else:
+#             st.warning("❌ No books found.")
+
+# # ✅ **Display Books in Card Format**
+# elif menu == "📚 Display Books":
+#     st.subheader("📚 All Books in Library")
+    
+#     if not st.session_state.library:
+#         st.info("📭 No books available.")
+#     else:
+#         filter_genre = st.selectbox("📂 Filter by Genre", ["All"] + list(set(book["genre"] for book in st.session_state.library)))
+#         filter_read = st.radio("✔️ Filter by Read Status", ["All", "Read", "Unread"])
+#         sort_by = st.radio("🔽 Sort By", ["Title", "Author", "Year"])
+
+#         books = st.session_state.library
+#         if filter_genre != "All":
+#             books = [book for book in books if book["genre"] == filter_genre]
+#         if filter_read != "All":
+#             books = [book for book in books if book["read"] == (filter_read == "Read")]
+
+#         books.sort(key=lambda x: x[sort_by.lower()], reverse=(sort_by == "Year"))
+
+#         # Display books as cards
+#         for book in books:
+#             # Create a card for each book
+#             with st.container():
+#                 col1, col2 = st.columns([0.2, 0.8])
+                
+#                 with col1:
+#                     if book["cover"]:
+#                         st.image(book["cover"], width=100, use_column_width="auto")
+#                 with col2:
+#                     st.markdown(f"""
+#                     <div style="background-color: #f0f0f0; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+#                         <h4 style="color: #2c3e50;">{book["title"]}</h4>
+#                         <p style="color: #34495e; font-size: 16px;">{book["author"]}</p>
+#                         <p style="color: #7f8c8d;">{book["year"]} | {book["genre"]}</p>
+#                         <p style="color: #16a085;">{"✔️ Read" if book["read"] else "📖 Unread"}</p>
+#                     </div>
+#                     """, unsafe_allow_html=True)
+
+# # ✅ **Library Statistics**
+# elif menu == "📊 Statistics":
+#     st.subheader("📊 Library Statistics")
+#     total_books = len(st.session_state.library)
+#     read_books = sum(1 for book in st.session_state.library if book["read"])
+#     unread_books = total_books - read_books
+#     st.write(f"📚 **Total Books:** {total_books}")
+#     st.write(f"✔️ **Books Read:** {read_books} ({(read_books/total_books*100) if total_books > 0 else 0:.2f}%)")
+#     st.write(f"📖 **Books Unread:** {unread_books}")
+
+# # ✅ **Import/Export Library**
+# elif menu == "📥 Import/Export":
+#     st.subheader("📥 Import / 📤 Export Library Data")
+#     if st.button("📤 Export as JSON"):
+#         with open("library_export.json", "w") as f:
+#             json.dump(st.session_state.library, f, indent=4)
+#         st.success("📂 Library exported as JSON!")
+
+#     uploaded_file = st.file_uploader("📥 Import JSON File", type=["json"])
+#     if uploaded_file:
+#         imported_data = json.load(uploaded_file)
+#         st.session_state.library.extend(imported_data)
+#         save_library(st.session_state.library)
+#         st.success("✅ Library imported successfully!")
+
+# # ✅ **Exit Option**
+# elif menu == "🚪 Exit":
+#     st.markdown("📌 **You have exited the app. Thank you for using the Library Manager!**")
 
 
 
