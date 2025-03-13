@@ -474,7 +474,6 @@
 #     st.warning("🚪 Exiting the application...")
 #     st.stop()
 
-
 import streamlit as st
 import json
 import os
@@ -552,9 +551,12 @@ if menu == "📖 Add Book":
                 if not os.path.exists(covers_dir):
                     os.makedirs(covers_dir)
                 cover_path = os.path.join(covers_dir, f"{title.replace(' ', '_')}.jpg")
-                with open(cover_path, "wb") as f:
-                    f.write(cover.getbuffer())
-                book["cover"] = cover_path
+                try:
+                    with open(cover_path, "wb") as f:
+                        f.write(cover.getbuffer())
+                    book["cover"] = cover_path
+                except Exception as e:
+                    st.error(f"Error saving cover image: {e}")
             st.session_state.library.append(book)
             save_library(st.session_state.library)
             st.success(f'📖 Book "{title}" added successfully!')
@@ -619,7 +621,10 @@ elif menu == "📚 Display Books":
                     with col1:
                         # Show image if it exists
                         if book["cover"]:
-                            st.image(book["cover"], width=120, use_container_width=True)
+                            try:
+                                st.image(book["cover"], width=120, use_container_width=True)
+                            except Exception as e:
+                                st.error(f"Error displaying cover image: {e}")
                     with col2:
                         st.markdown(f"""
                         <div style="background-color: #f0f0f0; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-bottom: 20px;">
@@ -637,19 +642,17 @@ elif menu == "📚 Display Books":
             for book in books:
                 table_data.append([book["title"], book["author"], book["year"], book["genre"], "✔️ Read" if book["read"] else "📖 Unread"])
             
-            # Create a DataFrame for easy table display
+            # Display table using pandas
             df = pd.DataFrame(table_data, columns=["Title", "Author", "Year", "Genre", "Status"])
             st.dataframe(df)
 
-# ✅ **Library Statistics (Card Format)**
+# ✅ **Statistics**
 elif menu == "📊 Statistics":
-    st.subheader("📊 Library Statistics")
-
-    # Calculate Statistics
+    st.subheader("📊 Statistics")
+    
     total_books = len(st.session_state.library)
-    read_books = sum(1 for book in st.session_state.library if book["read"])
+    read_books = len([book for book in st.session_state.library if book["read"]])
     unread_books = total_books - read_books
-
     most_common_genre = pd.Series([book["genre"] for book in st.session_state.library]).mode().get(0, "N/A")
     most_read_author = pd.Series([book["author"] for book in st.session_state.library]).mode().get(0, "N/A")
 
@@ -678,23 +681,27 @@ elif menu == "📥 Import/Export":
     # Import books from Excel
     uploaded_file = st.file_uploader("📥 Upload Excel File", type=["xlsx"])
     if uploaded_file:
-        excel_file = pd.read_excel(uploaded_file, sheet_name="Library")
-        for _, row in excel_file.iterrows():
-            book = {
-                "title": row["Title"],
-                "author": row["Author"],
-                "year": int(row["Year"]),
-                "genre": row["Genre"],
-                "read": row["Status"] == "✔️ Read",
-                "cover": ""
-            }
-            st.session_state.library.append(book)
-        save_library(st.session_state.library)
-        st.success("Books imported successfully!")
+        try:
+            excel_file = pd.read_excel(uploaded_file, sheet_name="Library")
+            for _, row in excel_file.iterrows():
+                book = {
+                    "title": row["Title"],
+                    "author": row["Author"],
+                    "year": int(row["Year"]),
+                    "genre": row["Genre"],
+                    "read": row["Status"] == "✔️ Read",
+                    "cover": ""
+                }
+                st.session_state.library.append(book)
+            save_library(st.session_state.library)
+            st.success("Books imported successfully!")
+        except Exception as e:
+            st.error(f"Error importing books: {e}")
 
 # ✅ **Exit Option**
 elif menu == "🚪 Exit":
     st.write("You have exited the Library Manager.")
+
 
 
 
